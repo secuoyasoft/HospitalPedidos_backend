@@ -1,0 +1,184 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ENUMS
+enum Enum_Role {
+  ADMINISTRATOR
+  ORDER_USER
+  PURCHASE_USER
+}
+
+enum Order_Status {
+  PENDING
+  CLOSED
+}
+
+// MODELOS
+model User {
+  id         Int             @id @default(autoincrement())
+  full_name  String
+  position   String
+  role       Enum_Role
+  email      String          @unique
+  password   String          @default("mipassword")
+  address     String         @default("")
+  phone      String          @default("")
+  
+  // RELACIONES
+  orders     Order[]         // Un usuario puede crear muchas órdenes
+  hospitals  UserHospital[]  // Un usuario puede trabajar en muchos hospitales ← NUEVO
+  
+  @@map("User")
+}
+
+model Hospital {
+  id        Int             @id @default(autoincrement())
+  name      String
+  address   String
+  contact   String
+  
+  // RELACIONES
+  orders    Order[]         // Un hospital puede tener muchas órdenes
+  orderStatic    OrderStatic[]         // Un hospital puede tener muchas órdenes
+  users     UserHospital[]  // Un hospital puede tener muchos usuarios ← NUEVO
+  
+  @@map("Hospital")
+}
+
+// TABLA INTERMEDIA (many-to-many explícita) ← NUEVO MODELO
+model UserHospital {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  hospital_id Int
+  user        User      @relation(fields: [user_id], references: [id])
+  hospital    Hospital  @relation(fields: [hospital_id], references: [id])
+  
+  // Campos adicionales opcionales
+  assigned_at DateTime  @default(now()) // Cuándo se asignó
+  is_active   Boolean   @default(true)  // Si la asignación está activa
+  
+  @@unique([user_id, hospital_id]) // Un usuario no puede estar asignado dos veces al mismo hospital
+  @@map("UserHospital")
+}
+
+model Product {
+  id         Int         @id @default(autoincrement())
+  name       String
+  path_img   String      @default("") // Ruta de la imagen del producto
+  
+  // RELACIONES
+  orderItems OrderItem[] // Un producto puede estar en muchos OrderItems
+  
+  @@map("Product")
+}
+
+model Order {
+  id          Int          @id @default(autoincrement())
+  status      Order_Status @default(PENDING)
+  
+  // FECHA Y HORA - NUEVOS CAMPOS
+  created_at  DateTime     @default(now()) // Fecha y hora de creación de la orden
+  
+  // RELACIONES (FOREIGN KEYS)
+  hospital_id Int
+  hospital    Hospital     @relation(fields: [hospital_id], references: [id])
+  // Una orden pertenece a UN hospital
+  
+  user_id     Int          
+  user        User         @relation(fields: [user_id], references: [id])
+  // Una orden es creada por UN usuario
+  
+  // RELACIONES INVERSAS
+  orderItems  OrderItem[]  // Una orden puede tener muchos OrderItems
+  
+  @@map("Order")
+}
+
+
+model OrderStatic{
+  id          Int          @id @default(autoincrement())
+  status      Order_Status @default(PENDING)
+
+  // FECHA Y HORA - NUEVOS CAMPOS
+  created_at  DateTime     @default(now()) // Fecha y hora de creación de la orden
+
+  userPurchase String      @default("") // Nombre completo del usuario que realiza la compra
+  userOrder    String      @default("")
+
+  quantity_purchase Int
+  quantity_details Int
+  total_price Float
+
+  hospital_id Int
+  hospital    Hospital     @relation(fields: [hospital_id], references: [id])
+
+ // RELACIONES INVERSAS
+  orderItemsStatic  OrderItemStatic[]  // Una orden puede tener muchos OrderItems
+  
+
+}
+
+
+model OrderItemStatic {
+  id          Int     @id @default(autoincrement())
+  
+  // CANTIDADES Y PRECIOS
+
+  product_name String
+  amount_measure String
+  price       Float
+  buy_check   Boolean @default(false)
+  observation String?
+  
+  // RELACIONES (FOREIGN KEYS)
+  order_static_id    Int
+  order_static       OrderStatic   @relation(fields: [order_static_id], references: [id])
+  
+  @@map("OrderItemStatic")
+}
+
+
+model OrderItem {
+  id          Int     @id @default(autoincrement())
+  
+  // CANTIDADES Y PRECIOS
+  amount      Float
+  buy_check   Boolean @default(false)
+  observation String?
+  price       Float
+  
+  // RELACIONES (FOREIGN KEYS)
+  order_id    Int
+  order       Order   @relation(fields: [order_id], references: [id])
+  // Un OrderItem pertenece a UNA orden
+  
+  product_id  Int
+  product     Product @relation(fields: [product_id], references: [id])
+  // Un OrderItem es de UN producto
+  
+  measure_id  Int
+  measure     Measure @relation(fields: [measure_id], references: [id])
+  // Un OrderItem usa UNA medida/unidad
+  
+  @@map("OrderItem")
+}
+
+model Measure {
+  id         Int         @id @default(autoincrement())
+  nombre     String
+  
+  // RELACIONES
+  orderItems OrderItem[] // Una medida puede ser usada en muchos OrderItems
+  
+  @@map("Measure")
+}
