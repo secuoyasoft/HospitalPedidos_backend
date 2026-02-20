@@ -54,7 +54,51 @@ export class ProductsService {
     });
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto) {
+  async update(id: number, updateProductDto: any, file?: Express.Multer.File) {
+    if (file) {
+      const fs = require('fs');
+      const path = require('path');
+      const uploadDir = path.join(process.cwd(), 'images');
+
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const fileName = `${Date.now()}-${file.originalname.replace(/\\s/g, '_')}`;
+      const filePath = path.join(uploadDir, fileName);
+
+      const sharp = require('sharp');
+      await sharp(file.buffer)
+        .resize(400, 400)
+        .toFile(filePath);
+
+      const oldProduct = await this.prisma.product.findUnique({
+        where: { id },
+      });
+
+      if (oldProduct && oldProduct.path_img) {
+        const oldFilePath = path.join(process.cwd(), oldProduct.path_img);
+        if (fs.existsSync(oldFilePath)) {
+          try {
+            fs.unlinkSync(oldFilePath);
+          } catch (err) {
+            console.error(`Error al eliminar la imagen: ${oldFilePath}`, err);
+          }
+        }
+      }
+
+      updateProductDto.path_img = `images/${fileName}`;
+    }
+
+    if (updateProductDto.price && typeof updateProductDto.price === 'string') {
+      updateProductDto.price = parseFloat(updateProductDto.price);
+    }
+
+    // Evitar sobreescribir con null str
+    if (updateProductDto.path_img === 'null' || !updateProductDto.path_img) {
+      delete updateProductDto.path_img;
+    }
+
     return await this.prisma.product.update({
       where: { id },
       data: updateProductDto,
@@ -62,8 +106,24 @@ export class ProductsService {
   }
 
   async remove(id: number) {
-    return await this.prisma.product.delete({
+    const product = await this.prisma.product.delete({
       where: { id },
     });
+
+    if (product.path_img) {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(process.cwd(), product.path_img);
+
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (err) {
+          console.error(`Error al eliminar la imagen: ${filePath}`, err);
+        }
+      }
+    }
+
+    return product;
   }
 }
