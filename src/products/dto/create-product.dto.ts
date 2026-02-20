@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, IsOptional } from 'class-validator';
 
 export class CreateProductDto {
     @IsString()
@@ -7,7 +7,7 @@ export class CreateProductDto {
     name: string;
 
     @IsString()
-    @IsNotEmpty()
+    @IsOptional()
     @MaxLength(1024)
-    path_img: string;
+    path_img?: string;
 }
