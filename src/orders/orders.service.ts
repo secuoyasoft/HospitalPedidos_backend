@@ -192,7 +192,7 @@ export class OrdersService {
   // ==========================================
 
   async createStatic(createOrderStaticDto: any) {
-    const { items, ...orderData } = createOrderStaticDto;
+    const { items, created_at, date, id, ...orderData } = createOrderStaticDto;
 
     return await this.prisma.orderStatic.create({
       data: {
