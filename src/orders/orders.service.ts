@@ -233,7 +233,7 @@ export class OrdersService {
   }
 
   async updateStatic(id: number, updateData: any) {
-    const { items, quantity_details, quantity_purchase, total_price, ...otherData } = updateData;
+    const { items, quantity_details, quantity_purchase, total_price, date, ...otherData } = updateData;
 
     // 1. Actualizar datos de la orden
     await this.prisma.orderStatic.update({
@@ -243,6 +243,7 @@ export class OrdersService {
         quantity_details: quantity_details,
         quantity_purchase: quantity_purchase,
         total_price: total_price,
+        date: date,
       },
     });
 
