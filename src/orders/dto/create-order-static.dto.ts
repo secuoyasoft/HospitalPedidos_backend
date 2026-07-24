@@ -29,6 +29,10 @@ export class CreateOrderStaticDto {
     @IsString()
     userOrder: string;
 
+    @IsOptional()
+    @IsString()
+    order_name?: string;
+
     @IsNumber()
     total_price: number;
 

@@ -114,6 +114,7 @@ model OrderStatic{
 
   userPurchase String      @default("") // Nombre completo del usuario que realiza la compra
   userOrder    String      @default("")
+  order_name   String      @default("Sin nombre")
 
   quantity_purchase Int
   quantity_details Int
