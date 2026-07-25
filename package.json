@@ -10,7 +10,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "npx prisma migrate deploy && TZ=America/Lima nest start",
     "start:dev": "cross-env TZ=America/Lima nest start --watch",
-    "start:debug": "TZ=America/Lima nest start --debug --watch",
+    "start:debug": "TZ=America/Lima nest start --debug --watch ",
     "start:prod": "npx prisma migrate deploy && TZ=America/Lima node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
