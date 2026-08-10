@@ -15,7 +15,6 @@ async function bootstrap() {
       disableErrorMessages: false, // Muestra mensajes de error detallados
     }),
   );
-
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
