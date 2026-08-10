@@ -23,6 +23,7 @@ enum Order_Status {
   CLOSED
 }
 
+
 // MODELOS
 model User {
   id         Int             @id @default(autoincrement())
