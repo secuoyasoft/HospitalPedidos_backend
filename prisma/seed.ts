@@ -5,48 +5,30 @@ import * as bcrypt from 'bcrypt';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Crear usuario admin por defecto
-  const hashedPassword = await bcrypt.hash('admin123', 10);
+  // Obtener credenciales desde las variables de entorno
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
+  if (!adminEmail || !adminPassword) {
+    console.error("❌ ERROR: ADMIN_EMAIL o ADMIN_PASSWORD no están definidos en las variables de entorno.");
+    process.exit(1);
+  }
+
+  // Crear usuario admin
+  const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
   await prisma.user.create({
     data: {
       full_name: 'Administrador Principal',
       position: 'Administrador del Sistema',
       role: Enum_Role.ADMINISTRATOR,
-      email: 'admin@hospital.com',
+      email: adminEmail,
       phone: '78945612',
       password: hashedPassword,
     },
   });
 
-  // Crear usuario solicitante ejemplo
-  const hashedPassword2 = await bcrypt.hash('solicitante123', 10);
-  await prisma.user.create({
-    data: {
-      full_name: 'Pedro Solicitante',
-      position: 'Jefe de Cocina',
-      role: Enum_Role.ORDER_USER,
-      email: 'pedro@hospital.com',
-      phone: '78945612',
-      password: hashedPassword2,
-    },
-  });
-
-  // Crear usuario comprador ejemplo
-  const hashedPassword3 = await bcrypt.hash('comprador123', 10);
-  await prisma.user.create({
-    data: {
-      full_name: 'María Compradora',
-      position: 'Encargada de Compras',
-      role: Enum_Role.PURCHASE_USER,
-      email: 'maria@hospital.com',
-      phone: '78945612',
-      password: hashedPassword3,
-    },
-  });
-
-  console.log('Usuarios de ejemplo creados exitosamente!');
+  console.log('Usuario administrador creado exitosamente!');
 }
 
 main()
