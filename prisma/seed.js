@@ -1,6 +1,6 @@
-// prisma/seed.ts
-import { PrismaClient, Enum_Role } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+// prisma/seed.js
+const { PrismaClient, Enum_Role } = require('@prisma/client');
+const bcrypt = require('bcrypt');
 
 const prisma = new PrismaClient();
 
