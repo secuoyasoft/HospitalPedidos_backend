@@ -77,6 +77,12 @@ model Product {
   name       String
   path_img   String      @default("") // Ruta de la imagen del producto
   
+  low_stock            Float       @default(0)
+  quantity             Float       @default(0)
+  last_entry_date      DateTime?
+  last_exit_date       DateTime?
+  preferred_measure    String?
+  
   // RELACIONES
   orderItems OrderItem[] // Un producto puede estar en muchos OrderItems
   
