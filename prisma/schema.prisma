@@ -36,7 +36,6 @@ model User {
   phone      String          @default("")
   
   // RELACIONES
-  orders     Order[]         // Un usuario puede crear muchas órdenes
   hospitals  UserHospital[]  // Un usuario puede trabajar en muchos hospitales ← NUEVO
   
   @@map("User")
@@ -49,9 +48,9 @@ model Hospital {
   contact   String
   
   // RELACIONES
-  orders    Order[]         // Un hospital puede tener muchas órdenes
   orderStatic    OrderStatic[]         // Un hospital puede tener muchas órdenes
   users     UserHospital[]  // Un hospital puede tener muchos usuarios ← NUEVO
+  movements Movement[]      // Un hospital puede tener muchos movimientos
   
   @@map("Hospital")
 }
@@ -83,33 +82,10 @@ model Product {
   last_exit_date       DateTime?
   preferred_measure    String?
   
-  // RELACIONES
-  orderItems OrderItem[] // Un producto puede estar en muchos OrderItems
-  
   @@map("Product")
 }
 
-model Order {
-  id          Int          @id @default(autoincrement())
-  status      Order_Status @default(PENDING)
-  
-  // FECHA Y HORA - NUEVOS CAMPOS
-  created_at  DateTime     @default(now()) // Fecha y hora de creación de la orden
-  
-  // RELACIONES (FOREIGN KEYS)
-  hospital_id Int
-  hospital    Hospital     @relation(fields: [hospital_id], references: [id])
-  // Una orden pertenece a UN hospital
-  
-  user_id     Int          
-  user        User         @relation(fields: [user_id], references: [id])
-  // Una orden es creada por UN usuario
-  
-  // RELACIONES INVERSAS
-  orderItems  OrderItem[]  // Una orden puede tener muchos OrderItems
-  
-  @@map("Order")
-}
+
 
 
 model OrderStatic{
@@ -155,37 +131,32 @@ model OrderItemStatic {
 }
 
 
-model OrderItem {
-  id          Int     @id @default(autoincrement())
-  
-  // CANTIDADES Y PRECIOS
-  amount      Float
-  buy_check   Boolean @default(false)
-  observation String?
-  price       Float
-  
-  // RELACIONES (FOREIGN KEYS)
-  order_id    Int
-  order       Order   @relation(fields: [order_id], references: [id])
-  // Un OrderItem pertenece a UNA orden
-  
-  product_id  Int
-  product     Product @relation(fields: [product_id], references: [id])
-  // Un OrderItem es de UN producto
-  
-  measure_id  Int
-  measure     Measure @relation(fields: [measure_id], references: [id])
-  // Un OrderItem usa UNA medida/unidad
-  
-  @@map("OrderItem")
-}
+
 
 model Measure {
   id         Int         @id @default(autoincrement())
   nombre     String
   
-  // RELACIONES
-  orderItems OrderItem[] // Una medida puede ser usada en muchos OrderItems
-  
   @@map("Measure")
+}
+
+enum Movement_Type {
+  IN
+  OUT
+}
+
+model Movement {
+  id               Int           @id @default(autoincrement())
+  product_name     String
+  quantity         Float
+  measure          String
+  movement_type    Movement_Type
+  cost             Float
+  date             DateTime      @default(now())
+  observation      String?
+  
+  hospital_id      Int
+  hospital         Hospital      @relation(fields: [hospital_id], references: [id])
+
+  @@map("Movement")
 }

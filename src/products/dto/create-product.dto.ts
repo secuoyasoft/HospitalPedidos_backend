@@ -10,4 +10,8 @@ export class CreateProductDto {
     @IsOptional()
     @MaxLength(1024)
     path_img?: string;
+
+    @IsString()
+    @IsOptional()
+    preferred_measure?: string;
 }

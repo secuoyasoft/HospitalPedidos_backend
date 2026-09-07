@@ -108,24 +108,6 @@ export class UsersService {
   }
 
   async remove(id: number) {
-    // 1. PRIMERO: Eliminar OrderItems de las órdenes del usuario
-    const userOrders = await this.prisma.order.findMany({
-      where: { user_id: id },
-      select: { id: true }
-    });
-
-    const orderIds = userOrders.map(order => order.id);
-
-    if (orderIds.length > 0) {
-      await this.prisma.orderItem.deleteMany({
-        where: { order_id: { in: orderIds } }
-      });
-
-      await this.prisma.order.deleteMany({
-        where: { id: { in: orderIds } }
-      });
-    }
-
 
 
     // ELIMINACION DE LA RELACION USUAIOhOSPITAL

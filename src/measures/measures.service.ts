@@ -57,24 +57,6 @@ export class MeasuresService {
     const measure = await this.findOne(id);
     
     try {
-      // 1. PRIMERO: Contar OrderItems que usan esta medida
-      const orderItemsCount = await this.prisma.orderItem.count({
-        where: { measure_id: id }
-      });
-      
-      this.logger.log(`Unidad "${measure.nombre}" tiene: ${orderItemsCount} items de órdenes`);
-
-      // 2. Eliminar OrderItems que usan esta medida (si existen)
-      if (orderItemsCount > 0) {
-        this.logger.log(`Eliminando ${orderItemsCount} OrderItems que usan esta medida`);
-        
-        await this.prisma.orderItem.deleteMany({
-          where: { measure_id: id }
-        });
-        
-        this.logger.log(`Eliminados ${orderItemsCount} OrderItems`);
-      }
-
       // 3. FINALMENTE: Eliminar la unidad de medida
       this.logger.log(`Eliminando unidad ID: ${id} - "${measure.nombre}"`);
       
@@ -87,21 +69,12 @@ export class MeasuresService {
       return {
         ...deletedMeasure,
         metadata: {
-          order_items_deleted: orderItemsCount,
-          message: `Unidad eliminada junto con ${orderItemsCount} items de órdenes`
+          message: `Unidad eliminada`
         }
       };
       
     } catch (error) {
       this.logger.error(`Error al eliminar unidad ${id}:`, error);
-      
-      // Mejorar mensaje de error para el cliente
-      if (error.code === 'P2003') { // Foreign key constraint failed
-        throw new Error(
-          `No se puede eliminar la unidad "${measure.nombre}" porque aún está siendo usada en items de órdenes. ` +
-          `Contacta al administrador del sistema.`
-        );
-      }
       
       throw error;
     }
@@ -111,18 +84,12 @@ export class MeasuresService {
   async getMeasureStats(id: number) {
     const measure = await this.findOne(id);
     
-    const orderItemsCount = await this.prisma.orderItem.count({
-      where: { measure_id: id }
-    });
-    
     return {
       measure: {
         id: measure.id,
         nombre: measure.nombre,
       },
       stats: {
-        total_order_items: orderItemsCount,
-        in_use: orderItemsCount > 0,
       }
     };
   }

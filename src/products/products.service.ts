@@ -44,8 +44,62 @@ export class ProductsService {
     });
   }
 
-  async findAll() {
-    return await this.prisma.product.findMany();
+  async findAll(hospitalId?: string) {
+    const products = await this.prisma.product.findMany();
+    
+    if (hospitalId) {
+      const hId = parseInt(hospitalId, 10);
+      
+      // Get all movements for this hospital
+      const movements = await this.prisma.movement.findMany({
+        where: { hospital_id: hId }
+      });
+      
+      // Map movements by product name
+      const stockMap = new Map<string, number>();
+      for (const m of movements) {
+        const current = stockMap.get(m.product_name) || 0;
+        if (m.movement_type === 'IN') {
+          stockMap.set(m.product_name, current + m.quantity);
+        } else {
+          stockMap.set(m.product_name, current - m.quantity);
+        }
+      }
+      
+      // Update quantity and last dates for the response
+      for (const p of products) {
+        p.quantity = stockMap.get(p.name) || 0;
+        
+        const productMovements = movements.filter(m => m.product_name === p.name);
+        if (productMovements.length > 0) {
+            const inMovements = productMovements.filter(m => m.movement_type === 'IN').sort((a,b) => b.date.getTime() - a.date.getTime());
+            const outMovements = productMovements.filter(m => m.movement_type === 'OUT').sort((a,b) => b.date.getTime() - a.date.getTime());
+            
+            p.last_entry_date = inMovements.length > 0 ? inMovements[0].date : null;
+            p.last_exit_date = outMovements.length > 0 ? outMovements[0].date : null;
+        } else {
+            p.quantity = 0;
+            p.last_entry_date = null;
+            p.last_exit_date = null;
+        }
+      }
+    }
+    
+    return products;
+  }
+
+  async getDashboardStats(hospitalId?: string) {
+    const products = await this.findAll(hospitalId);
+    
+    const totalProducts = products.length;
+    const outOfStock = products.filter(p => p.quantity === 0).length;
+    const lowStock = products.filter(p => p.quantity <= p.low_stock && p.quantity > 0).length;
+
+    return {
+      totalProducts,
+      lowStock,
+      outOfStock,
+    };
   }
 
   async findOne(id: number) {

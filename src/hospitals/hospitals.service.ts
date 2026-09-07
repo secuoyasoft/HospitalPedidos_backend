@@ -31,23 +31,8 @@ export class HospitalsService {
     const hospital = await this.prisma.hospital.findUnique({
       where: { id },
       include: {
-        orders: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                full_name: true,
-              }
-            },
-            orderItems: {
-              include: {
-                product: true,
-                measure: true,
-              }
-            }
-          }
-        }
-      },
+        orderStatic: true,
+      }
     });
 
     if (!hospital) {
@@ -100,33 +85,5 @@ export class HospitalsService {
     });
   }
 
-  // Método adicional: Obtener órdenes del hospital
-  async getHospitalOrders(id: number, status?: string) {
-    await this.findOne(id); // Verificar que el hospital existe
 
-    const whereClause: any = { hospital_id: id };
-
-    if (status) {
-      whereClause.status = status;
-    }
-
-    return await this.prisma.order.findMany({
-      where: whereClause,
-      include: {
-        user: {
-          select: {
-            id: true,
-            full_name: true,
-          }
-        },
-        orderItems: {
-          include: {
-            product: true,
-            measure: true,
-          }
-        }
-      },
-      orderBy: { id: 'desc' }
-    });
-  }
 }

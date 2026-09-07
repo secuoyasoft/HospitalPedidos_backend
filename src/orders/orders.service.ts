@@ -1,191 +1,14 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { UpdateOrderDto } from './dto/update-order.dto';
+
 import { PrismaService } from '../prisma/prisma.service';
-import { Order_Status } from '@prisma/client';
+import { Order_Status, Movement_Type } from '@prisma/client';
+import { convertMeasure, parseAmountMeasure } from '../utils/measure-conversion.util';
 
 @Injectable()
 export class OrdersService {
   constructor(private prisma: PrismaService) { }
 
-  async create(createOrderDto: CreateOrderDto, userId: number) {
-    return await this.prisma.order.create({
-      data: {
-        status: Order_Status.PENDING,
-        hospital_id: createOrderDto.hospital_id,
-        user_id: userId,
-        orderItems: {
-          create: createOrderDto.items.map(item => ({
-            amount: item.amount,
-            price: item.price || 0,
-            product_id: item.product_id,
-            measure_id: item.measure_id,
-            buy_check: false,
-            observation: item.observation || '',
-          })),
-        },
-      },
-      include: {
-        hospital: true,
-        user: true,
-        orderItems: {
-          include: {
-            product: true,
-            measure: true,
-          },
-        },
-      },
-    });
-  }
 
-  async findAll() {
-    return await this.prisma.order.findMany({
-      include: {
-        hospital: true,
-        user: true,
-        orderItems: {
-          include: {
-            product: true,
-            measure: true,
-          },
-        },
-      },
-      orderBy: {
-        id: 'desc',
-      },
-    });
-  }
-
-  // PARA ORDER_USER: Ver solo sus órdenes
-  async findByUserId(userId: number) {
-    return await this.prisma.order.findMany({
-      where: {
-        user_id: userId,
-      },
-      include: {
-        hospital: true,
-        orderItems: {
-          include: {
-            product: true,
-            measure: true,
-          },
-        },
-      },
-      orderBy: {
-        id: 'desc',
-      },
-    });
-  }
-
-  // PARA PURCHASE_USER: Ver órdenes pendientes de compra
-  async findPending() {
-    return await this.prisma.order.findMany({
-      where: {
-        status: Order_Status.PENDING,
-      },
-      include: {
-        hospital: true,
-        user: true,
-        orderItems: {
-          include: {
-            product: true,
-            measure: true,
-          },
-        },
-      },
-      orderBy: {
-        id: 'desc',
-      },
-    });
-  }
-
-  async findOne(id: number) {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-      include: {
-        hospital: true,
-        user: true,
-        orderItems: {
-          include: {
-            product: true,
-            measure: true,
-          },
-        },
-      },
-    });
-
-    if (!order) {
-      throw new NotFoundException(`Orden con ID ${id} no encontrada`);
-    }
-
-    return order;
-  }
-
-  async update(id: number, updateOrderDto: UpdateOrderDto) {
-    // Verificar que la orden exista
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-    });
-
-    if (!order) {
-      throw new NotFoundException(`Orden con ID ${id} no encontrada`);
-    }
-
-    // Solo permitir actualizar si está PENDING
-    if (order.status !== Order_Status.PENDING) {
-      throw new ForbiddenException('Solo se pueden modificar órdenes pendientes');
-    }
-
-    return await this.prisma.order.update({
-      where: { id },
-      data: updateOrderDto,
-      include: {
-        hospital: true,
-        user: true,
-        orderItems: {
-          include: {
-            product: true,
-            measure: true,
-          },
-        },
-      },
-    });
-  }
-
-  async remove(id: number) {
-    // Verificar que la orden exista
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-    });
-
-    if (!order) {
-      throw new NotFoundException(`Orden con ID ${id} no encontrada`);
-    }
-
-    // Solo permitir eliminar si está PENDING
-    if (order.status !== Order_Status.PENDING) {
-      throw new ForbiddenException('Solo se pueden eliminar órdenes pendientes');
-    }
-
-    // PRIMERO: Eliminar OrderItems (cascade manual si no está en prisma)
-    await this.prisma.orderItem.deleteMany({
-      where: { order_id: id }
-    });
-
-    return await this.prisma.order.delete({
-      where: { id },
-    });
-  }
-
-  // MÉTODO ADICIONAL: Cambiar estado de orden a CLOSED (para compras)
-  async markAsClosed(id: number) {
-    return await this.prisma.order.update({
-      where: { id },
-      data: {
-        status: Order_Status.CLOSED,
-      },
-    });
-  }
 
   // ==========================================
   // ORDER STATIC (SNAPSHOTS)
@@ -233,18 +56,34 @@ export class OrdersService {
   }
 
   async updateStatic(id: number, updateData: any) {
-    const { items, quantity_details, quantity_purchase, total_price, date, ...otherData } = updateData;
+    const { items, quantity_details, quantity_purchase, total_price, date, status, ...otherData } = updateData;
+
+    // Verificar el estado anterior de la orden para no duplicar movimientos
+    const existingOrder = await this.prisma.orderStatic.findUnique({
+      where: { id },
+    });
+
+    if (!existingOrder) {
+      throw new NotFoundException(`OrderStatic con ID ${id} no encontrada`);
+    }
+
+    const previousStatus = existingOrder.status;
 
     // 1. Actualizar datos de la orden
+    const updatePayload: any = {
+      ...otherData,
+      quantity_details: quantity_details,
+      quantity_purchase: quantity_purchase,
+      total_price: total_price,
+      date: date,
+    };
+    if (status) {
+      updatePayload.status = status;
+    }
+
     await this.prisma.orderStatic.update({
       where: { id },
-      data: {
-        ...otherData,
-        quantity_details: quantity_details,
-        quantity_purchase: quantity_purchase,
-        total_price: total_price,
-        date: date,
-      },
+      data: updatePayload,
     });
 
     // 2. Actualizar items si se proporcionan
@@ -265,12 +104,56 @@ export class OrdersService {
     }
 
     // 3. Retornar orden actualizada con items
-    return await this.prisma.orderStatic.findUnique({
+    const updatedOrder = await this.prisma.orderStatic.findUnique({
       where: { id },
       include: {
         orderItemsStatic: true,
       },
     });
+
+    // 4. Generar movimientos y actualizar inventario si el pedido fue cerrado
+    if (status === 'CLOSED' && previousStatus !== 'CLOSED' && updatedOrder) {
+      for (const item of updatedOrder.orderItemsStatic) {
+        const { quantity, measure } = parseAmountMeasure(item.amount_measure);
+        
+        // Buscar el producto original para obtener su preferred_measure
+        const product = await this.prisma.product.findFirst({
+          where: { name: item.product_name }
+        });
+
+        let finalQuantity = quantity;
+        
+        if (product) {
+            // Convertir la cantidad si preferred_measure está definido
+            finalQuantity = convertMeasure(quantity, measure, product.preferred_measure);
+            
+            // Actualizar stock del producto
+            await this.prisma.product.update({
+                where: { id: product.id },
+                data: {
+                    quantity: product.quantity + finalQuantity,
+                    last_entry_date: new Date()
+                }
+            });
+        }
+        
+        // Crear el movimiento con la cantidad y medida convertida
+        await this.prisma.movement.create({
+            data: {
+                product_name: item.product_name,
+                quantity: finalQuantity, // Guardamos la cantidad convertida
+                measure: product?.preferred_measure || measure, // Guardamos la medida preferida si existe
+                movement_type: Movement_Type.IN,
+                cost: item.price || 0,
+                date: new Date(),
+                observation: item.observation,
+                hospital_id: updatedOrder.hospital_id,
+            }
+        });
+      }
+    }
+
+    return updatedOrder;
   }
 
   async removeStatic(id: number) {
