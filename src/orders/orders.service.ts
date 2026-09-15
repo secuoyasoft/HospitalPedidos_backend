@@ -1,14 +1,19 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { Order_Status, Movement_Type } from '@prisma/client';
-import { convertMeasure, parseAmountMeasure } from '../utils/measure-conversion.util';
+import {
+  convertMeasure,
+  parseAmountMeasure,
+} from '../utils/measure-conversion.util';
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) { }
-
-
+  constructor(private prisma: PrismaService) {}
 
   // ==========================================
   // ORDER STATIC (SNAPSHOTS)
@@ -24,7 +29,7 @@ export class OrdersService {
         quantity_purchase: 0,
         quantity_details: 0,
         orderItemsStatic: {
-          create: items.map(item => ({
+          create: items.map((item) => ({
             product_name: item.product_name,
             amount_measure: item.amount_measure,
             price: item.price,
@@ -56,7 +61,15 @@ export class OrdersService {
   }
 
   async updateStatic(id: number, updateData: any) {
-    const { items, quantity_details, quantity_purchase, total_price, date, status, ...otherData } = updateData;
+    const {
+      items,
+      quantity_details,
+      quantity_purchase,
+      total_price,
+      date,
+      status,
+      ...otherData
+    } = updateData;
 
     // Verificar el estado anterior de la orden para no duplicar movimientos
     const existingOrder = await this.prisma.orderStatic.findUnique({
@@ -115,40 +128,64 @@ export class OrdersService {
     if (status === 'CLOSED' && previousStatus !== 'CLOSED' && updatedOrder) {
       for (const item of updatedOrder.orderItemsStatic) {
         const { quantity, measure } = parseAmountMeasure(item.amount_measure);
-        
+
         // Buscar el producto original para obtener su preferred_measure
         const product = await this.prisma.product.findFirst({
-          where: { name: item.product_name }
+          where: { name: item.product_name },
         });
 
         let finalQuantity = quantity;
-        
+
         if (product) {
-            // Convertir la cantidad si preferred_measure está definido
-            finalQuantity = convertMeasure(quantity, measure, product.preferred_measure);
-            
-            // Actualizar stock del producto
-            await this.prisma.product.update({
-                where: { id: product.id },
-                data: {
-                    quantity: product.quantity + finalQuantity,
-                    last_entry_date: new Date()
-                }
+          // Convertir la cantidad si preferred_measure está definido
+          finalQuantity = convertMeasure(
+            quantity,
+            measure,
+            product.preferred_measure,
+          );
+
+          // Actualizar o crear stock en HospitalStock
+          const stockRecord = await this.prisma.hospitalStock.findFirst({
+            where: {
+              product_id: product.id,
+              hospital_id: updatedOrder.hospital_id,
+            },
+          });
+
+          if (stockRecord) {
+            await this.prisma.hospitalStock.update({
+              where: { id: stockRecord.id },
+              data: {
+                quantity: stockRecord.quantity + finalQuantity,
+                last_entry_date: new Date(),
+              },
             });
+          } else {
+            await this.prisma.hospitalStock.create({
+              data: {
+                product_id: product.id,
+                product_name: product.name,
+                hospital_id: updatedOrder.hospital_id,
+                quantity: finalQuantity,
+                last_entry_date: new Date(),
+              },
+            });
+          }
         }
-        
+
         // Crear el movimiento con la cantidad y medida convertida
         await this.prisma.movement.create({
-            data: {
-                product_name: item.product_name,
-                quantity: finalQuantity, // Guardamos la cantidad convertida
-                measure: product?.preferred_measure || measure, // Guardamos la medida preferida si existe
-                movement_type: Movement_Type.IN,
-                cost: item.price || 0,
-                date: new Date(),
-                observation: item.observation,
-                hospital_id: updatedOrder.hospital_id,
-            }
+          data: {
+            product_id: product?.id,
+            product_name: item.product_name,
+            quantity: finalQuantity, // Guardamos la cantidad convertida
+            measure: product?.preferred_measure || measure, // Guardamos la medida preferida si existe
+            movement_type: Movement_Type.IN,
+            cost: item.price || 0,
+            date: new Date(),
+            observation: item.observation,
+            hospital_id: updatedOrder.hospital_id,
+          },
         });
       }
     }

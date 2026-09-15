@@ -7,7 +7,7 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards
+  UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UsersService } from './users.service';
@@ -21,7 +21,7 @@ import { Enum_Role } from '@prisma/client';
 @UseGuards(AuthGuard('jwt'), RolesGuard) // Protección con JWT + Roles
 @Roles(Enum_Role.ADMINISTRATOR) // Solo ADMINISTRATOR puede acceder
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
@@ -40,7 +40,7 @@ export class UsersController {
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    console.log("En user controller......");
+    console.log('En user controller......');
     return this.usersService.update(+id, updateUserDto);
   }
 

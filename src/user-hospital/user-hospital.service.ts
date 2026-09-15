@@ -4,10 +4,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserHospitalDto } from './dto/create-user-hospital.dto';
 import { UpdateUserHospitalDto } from './dto/update-user-hospital.dto';
 
-
 @Injectable()
 export class UserHospitalService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   // ========== CRUD BÁSICO ==========
 
@@ -173,7 +172,10 @@ export class UserHospitalService {
     });
   }
 
-  async isUserAssignedToHospital(userId: number, hospitalId: number): Promise<boolean> {
+  async isUserAssignedToHospital(
+    userId: number,
+    hospitalId: number,
+  ): Promise<boolean> {
     const assignment = await this.prisma.userHospital.findFirst({
       where: {
         user_id: userId,

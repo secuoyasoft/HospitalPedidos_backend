@@ -51,6 +51,8 @@ model Hospital {
   orderStatic    OrderStatic[]         // Un hospital puede tener muchas órdenes
   users     UserHospital[]  // Un hospital puede tener muchos usuarios ← NUEVO
   movements Movement[]      // Un hospital puede tener muchos movimientos
+
+  hospitalStocks HospitalStock[]
   
   @@map("Hospital")
 }
@@ -116,7 +118,7 @@ model OrderItemStatic {
   id          Int     @id @default(autoincrement())
   
   // CANTIDADES Y PRECIOS
-
+  product_id   Int?
   product_name String
   amount_measure String
   price       Float
@@ -147,6 +149,7 @@ enum Movement_Type {
 
 model Movement {
   id               Int           @id @default(autoincrement())
+  product_id       Int?
   product_name     String
   quantity         Float
   measure          String
@@ -159,4 +162,22 @@ model Movement {
   hospital         Hospital      @relation(fields: [hospital_id], references: [id])
 
   @@map("Movement")
+}
+
+model HospitalStock {
+  id              Int       @id @default(autoincrement())
+  
+  product_id      Int
+  product_name    String
+  hospital_id     Int
+  
+  quantity        Float     @default(0)
+  
+  last_entry_date DateTime?
+  last_exit_date  DateTime?
+  
+  hospital        Hospital  @relation(fields: [hospital_id], references: [id])
+
+  @@unique([product_id, hospital_id])
+  @@map("HospitalStock")
 }

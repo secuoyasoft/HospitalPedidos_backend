@@ -9,7 +9,7 @@ import {
   UseGuards,
   Request,
   ForbiddenException,
-  Query
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { OrdersService } from './orders.service';
@@ -21,7 +21,7 @@ import { Enum_Role } from '@prisma/client';
 @Controller('orders')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) { }
+  constructor(private readonly ordersService: OrdersService) {}
 
   // ==========================================
   // ORDER STATIC (SNAPSHOTS)
@@ -34,7 +34,9 @@ export class OrdersController {
 
   @Get('static')
   findAllStatic(@Query('hospitalId') hospitalId?: string) {
-    return this.ordersService.findAllStatic(hospitalId ? +hospitalId : undefined);
+    return this.ordersService.findAllStatic(
+      hospitalId ? +hospitalId : undefined,
+    );
   }
 
   @Patch('static/:id')
@@ -48,6 +50,4 @@ export class OrdersController {
   removeStatic(@Param('id') id: string) {
     return this.ordersService.removeStatic(+id);
   }
-
-
 }

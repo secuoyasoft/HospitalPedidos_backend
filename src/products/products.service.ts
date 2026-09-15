@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createProductDto: any, file?: Express.Multer.File) {
     if (file) {
@@ -24,9 +24,7 @@ export class ProductsService {
 
       // 3. Redimensionar y guardar usando sharp
       const sharp = require('sharp');
-      await sharp(file.buffer)
-        .resize(400, 400)
-        .toFile(filePath);
+      await sharp(file.buffer).resize(400, 400).toFile(filePath);
 
       // 4. Guardar la ruta relativa en la base de datos
       createProductDto.path_img = `images/${fileName}`;
@@ -46,54 +44,36 @@ export class ProductsService {
 
   async findAll(hospitalId?: string) {
     const products = await this.prisma.product.findMany();
-    
+
     if (hospitalId) {
       const hId = parseInt(hospitalId, 10);
-      
-      // Get all movements for this hospital
-      const movements = await this.prisma.movement.findMany({
-        where: { hospital_id: hId }
+
+      const stocks = await this.prisma.hospitalStock.findMany({
+        where: { hospital_id: hId },
       });
-      
-      // Map movements by product name
-      const stockMap = new Map<string, number>();
-      for (const m of movements) {
-        const current = stockMap.get(m.product_name) || 0;
-        if (m.movement_type === 'IN') {
-          stockMap.set(m.product_name, current + m.quantity);
-        } else {
-          stockMap.set(m.product_name, current - m.quantity);
-        }
-      }
-      
-      // Update quantity and last dates for the response
-      for (const p of products) {
-        p.quantity = stockMap.get(p.name) || 0;
-        
-        const productMovements = movements.filter(m => m.product_name === p.name);
-        if (productMovements.length > 0) {
-            const inMovements = productMovements.filter(m => m.movement_type === 'IN').sort((a,b) => b.date.getTime() - a.date.getTime());
-            const outMovements = productMovements.filter(m => m.movement_type === 'OUT').sort((a,b) => b.date.getTime() - a.date.getTime());
-            
-            p.last_entry_date = inMovements.length > 0 ? inMovements[0].date : null;
-            p.last_exit_date = outMovements.length > 0 ? outMovements[0].date : null;
-        } else {
-            p.quantity = 0;
-            p.last_entry_date = null;
-            p.last_exit_date = null;
-        }
-      }
+
+      return products.map((p) => {
+        const stock = stocks.find((s) => s.product_id === p.id);
+        return {
+          ...p,
+          quantity: stock ? stock.quantity : 0,
+          last_entry_date: stock ? stock.last_entry_date : null,
+          last_exit_date: stock ? stock.last_exit_date : null,
+        };
+      });
     }
-    
+
     return products;
   }
 
   async getDashboardStats(hospitalId?: string) {
     const products = await this.findAll(hospitalId);
-    
+
     const totalProducts = products.length;
-    const outOfStock = products.filter(p => p.quantity === 0).length;
-    const lowStock = products.filter(p => p.quantity <= p.low_stock && p.quantity > 0).length;
+    const outOfStock = products.filter((p) => p.quantity === 0).length;
+    const lowStock = products.filter(
+      (p) => p.quantity <= p.low_stock && p.quantity > 0,
+    ).length;
 
     return {
       totalProducts,
@@ -122,9 +102,7 @@ export class ProductsService {
       const filePath = path.join(uploadDir, fileName);
 
       const sharp = require('sharp');
-      await sharp(file.buffer)
-        .resize(400, 400)
-        .toFile(filePath);
+      await sharp(file.buffer).resize(400, 400).toFile(filePath);
 
       const oldProduct = await this.prisma.product.findUnique({
         where: { id },

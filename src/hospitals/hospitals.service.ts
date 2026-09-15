@@ -7,7 +7,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class HospitalsService {
   private readonly logger = new Logger(HospitalsService.name);
 
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createHospitalDto: CreateHospitalDto) {
     this.logger.log(`Creando nuevo hospital: ${createHospitalDto.name}`);
@@ -32,7 +32,7 @@ export class HospitalsService {
       where: { id },
       include: {
         orderStatic: true,
-      }
+      },
     });
 
     if (!hospital) {
@@ -60,30 +60,28 @@ export class HospitalsService {
     // 1. PRIMERO: Eliminar OrderItems de las órdenes del hospital
     const hospitalOrders = await this.prisma.orderStatic.findMany({
       where: { hospital_id: id },
-      select: { id: true }
+      select: { id: true },
     });
 
-    const orderIds = hospitalOrders.map(order => order.id);
+    const orderIds = hospitalOrders.map((order) => order.id);
 
     if (orderIds.length > 0) {
       await this.prisma.orderItemStatic.deleteMany({
-        where: { order_static_id: { in: orderIds } }
+        where: { order_static_id: { in: orderIds } },
       });
 
       await this.prisma.orderStatic.deleteMany({
-        where: { id: { in: orderIds } }
+        where: { id: { in: orderIds } },
       });
     }
 
     // 2. Eliminar relaciones con usuarios (UserHospital)
     await this.prisma.userHospital.deleteMany({
-      where: { hospital_id: id }
+      where: { hospital_id: id },
     });
 
     return await this.prisma.hospital.delete({
       where: { id },
     });
   }
-
-
 }

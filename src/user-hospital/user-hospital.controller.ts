@@ -22,7 +22,7 @@ import { Enum_Role } from '@prisma/client';
 @Controller('user-hospitals')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 export class UserHospitalController {
-  constructor(private readonly userHospitalService: UserHospitalService) { }
+  constructor(private readonly userHospitalService: UserHospitalService) {}
 
   // ========== ENDPOINTS CRUD BÁSICOS (Solo ADMIN) ==========
 
@@ -78,9 +78,7 @@ export class UserHospitalController {
   // Asignar usuario a hospital (más simple que create)
   @Post('assign')
   @Roles(Enum_Role.ADMINISTRATOR)
-  assignUserToHospital(
-    @Body() body: { user_id: number; hospital_id: number },
-  ) {
+  assignUserToHospital(@Body() body: { user_id: number; hospital_id: number }) {
     return this.userHospitalService.assignUserToHospital(
       body.user_id,
       body.hospital_id,
@@ -94,22 +92,26 @@ export class UserHospitalController {
     @Param('userId') userId: string,
     @Param('hospitalId') hospitalId: string,
   ) {
-    return this.userHospitalService.removeUserFromHospital(+userId, +hospitalId);
+    return this.userHospitalService.removeUserFromHospital(
+      +userId,
+      +hospitalId,
+    );
   }
 
   // Ver hospitales de un usuario
   @Get('user/:userId/hospitals')
-  async getUserHospitals(
-    @Param('userId') userId: string,
-    @Request() req,
-  ) {
+  async getUserHospitals(@Param('userId') userId: string, @Request() req) {
     const currentUserId = req.user.sub;
     const currentUserRole = req.user.role;
 
     // Solo puede ver sus propias asignaciones a menos que sea admin
-    if (currentUserRole !== Enum_Role.ADMINISTRATOR &&
-      currentUserId !== +userId) {
-      throw new ForbiddenException('No puedes ver las asignaciones de otro usuario');
+    if (
+      currentUserRole !== Enum_Role.ADMINISTRATOR &&
+      currentUserId !== +userId
+    ) {
+      throw new ForbiddenException(
+        'No puedes ver las asignaciones de otro usuario',
+      );
     }
 
     return this.userHospitalService.getUserHospitals(+userId);
@@ -153,7 +155,6 @@ export class UserHospitalController {
     };
   }
 
-
   // Ver usuarios de un hospital (solo admin)
   @Get('hospital/:hospitalId/users')
   @Roles(Enum_Role.ADMINISTRATOR)
@@ -172,9 +173,13 @@ export class UserHospitalController {
     const currentUserId = req.user.sub;
 
     // Solo admin puede verificar asignaciones de otros usuarios
-    if (currentUserRole !== Enum_Role.ADMINISTRATOR &&
-      currentUserId !== +userId) {
-      throw new ForbiddenException('No puedes verificar asignaciones de otros usuarios');
+    if (
+      currentUserRole !== Enum_Role.ADMINISTRATOR &&
+      currentUserId !== +userId
+    ) {
+      throw new ForbiddenException(
+        'No puedes verificar asignaciones de otros usuarios',
+      );
     }
 
     const isAssigned = await this.userHospitalService.isUserAssignedToHospital(

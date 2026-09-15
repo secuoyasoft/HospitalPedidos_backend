@@ -8,13 +8,13 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   // MÉTODO NECESARIO: Buscar por email (username)
   async findByEmail(email: string): Promise<PrismaUser | null> {
     return await this.prisma.user.findUnique({
       where: {
-        email: email.toLowerCase().trim()
+        email: email.toLowerCase().trim(),
       },
     });
   }
@@ -33,7 +33,7 @@ export class UsersService {
       data: {
         full_name: createUserDto.full_name,
         position: createUserDto.position,
-        role: createUserDto.role as Enum_Role, // ADMINISTRATOR, ORDER_USER, PURCHASE_USER
+        role: createUserDto.role, // ADMINISTRATOR, ORDER_USER, PURCHASE_USER
         email: createUserDto.email.toLowerCase().trim(),
         phone: createUserDto.phone,
         password: hashedPassword,
@@ -88,7 +88,7 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    console.log("ENTRANDO A updateUserDto.password:", !!updateUserDto.password);    // Si se actualiza password, hashearla
+    console.log('ENTRANDO A updateUserDto.password:', !!updateUserDto.password); // Si se actualiza password, hashearla
     if (updateUserDto.password) {
       updateUserDto.password = await bcrypt.hash(updateUserDto.password, 10);
     }
@@ -108,13 +108,10 @@ export class UsersService {
   }
 
   async remove(id: number) {
-
-
     // ELIMINACION DE LA RELACION USUAIOhOSPITAL
     await this.prisma.userHospital.deleteMany({
-      where: { user_id: id }
+      where: { user_id: id },
     });
-
 
     return await this.prisma.user.delete({
       where: { id },

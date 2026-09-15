@@ -26,7 +26,7 @@ export class MeasuresService {
 
   async findOne(id: number) {
     this.logger.log(`Buscando unidad ID: ${id}`);
-    
+
     const measure = await this.prisma.measure.findUnique({
       where: { id },
     });
@@ -40,10 +40,10 @@ export class MeasuresService {
 
   async update(id: number, updateMeasureDto: UpdateMeasureDto) {
     this.logger.log(`Actualizando unidad ID: ${id}`);
-    
+
     // Verificar si la unidad existe
     await this.findOne(id);
-    
+
     return await this.prisma.measure.update({
       where: { id },
       data: updateMeasureDto,
@@ -52,30 +52,31 @@ export class MeasuresService {
 
   async remove(id: number) {
     this.logger.log(`Iniciando eliminación de unidad ID: ${id}`);
-    
+
     // Verificar si la unidad existe
     const measure = await this.findOne(id);
-    
+
     try {
       // 3. FINALMENTE: Eliminar la unidad de medida
       this.logger.log(`Eliminando unidad ID: ${id} - "${measure.nombre}"`);
-      
+
       const deletedMeasure = await this.prisma.measure.delete({
-        where: { id }
+        where: { id },
       });
-      
-      this.logger.log(`Unidad ${id} - "${measure.nombre}" eliminada exitosamente`);
-      
+
+      this.logger.log(
+        `Unidad ${id} - "${measure.nombre}" eliminada exitosamente`,
+      );
+
       return {
         ...deletedMeasure,
         metadata: {
-          message: `Unidad eliminada`
-        }
+          message: `Unidad eliminada`,
+        },
       };
-      
     } catch (error) {
       this.logger.error(`Error al eliminar unidad ${id}:`, error);
-      
+
       throw error;
     }
   }
@@ -83,14 +84,13 @@ export class MeasuresService {
   // Método adicional: Obtener estadísticas de uso
   async getMeasureStats(id: number) {
     const measure = await this.findOne(id);
-    
+
     return {
       measure: {
         id: measure.id,
         nombre: measure.nombre,
       },
-      stats: {
-      }
+      stats: {},
     };
   }
 }

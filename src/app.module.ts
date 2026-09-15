@@ -21,9 +21,17 @@ import { MovementsModule } from './movements/movements.module';
       rootPath: join(process.cwd(), 'images'),
       serveRoot: '/images',
     }),
-    UsersModule, HospitalsModule, ProductsModule, OrdersModule, MeasuresModule, PrismaModule, AuthModule, UserHospitalModule, MovementsModule
+    UsersModule,
+    HospitalsModule,
+    ProductsModule,
+    OrdersModule,
+    MeasuresModule,
+    PrismaModule,
+    AuthModule,
+    UserHospitalModule,
+    MovementsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })
-export class AppModule { }
+export class AppModule {}

@@ -11,7 +11,11 @@ export class MovementsController {
     @Query('endDate') endDate: string,
     @Query('hospitalId') hospitalId?: string,
   ) {
-    return this.movementsService.getDashboardStats(startDate, endDate, hospitalId);
+    return this.movementsService.getDashboardStats(
+      startDate,
+      endDate,
+      hospitalId,
+    );
   }
 
   @Get()
