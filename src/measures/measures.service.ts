@@ -3,7 +3,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMeasureDto } from './dto/create-measure.dto';
 import { UpdateMeasureDto } from './dto/update-measure.dto';
-
+import { conversionRates } from '../utils/measure-conversion.util';
 @Injectable()
 export class MeasuresService {
   private readonly logger = new Logger(MeasuresService.name);
@@ -19,8 +19,23 @@ export class MeasuresService {
 
   async findAll() {
     this.logger.log('Obteniendo todas las unidades de medida');
-    return await this.prisma.measure.findMany({
+    const measures = await this.prisma.measure.findMany({
       orderBy: { nombre: 'asc' },
+    });
+
+    return measures.map((m) => {
+      // Normalizar para buscar en el diccionario (minúsculas, sin espacios extra)
+      const normalizedName = m.nombre
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+        
+      const category = conversionRates[normalizedName]?.base || 'unknown';
+      return {
+        ...m,
+        category,
+      };
     });
   }
 

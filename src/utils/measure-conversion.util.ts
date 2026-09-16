@@ -18,7 +18,7 @@ function normalizeMeasure(measure: string): string {
  * Volumen base: Mililitros (ml)
  * Unidades base: Unidad (u)
  */
-const conversionRates: Record<string, { base: string; rate: number }> = {
+export const conversionRates: Record<string, { base: string; rate: number }> = {
   // PESO (base: gramos)
   g: { base: 'weight', rate: 1 },
   gr: { base: 'weight', rate: 1 },
