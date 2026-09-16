@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, MaxLength, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, MaxLength, IsOptional, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
@@ -14,4 +15,9 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   preferred_measure?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  low_stock?: number;
 }

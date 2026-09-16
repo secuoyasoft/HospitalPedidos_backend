@@ -36,7 +36,9 @@ export class ProductsService {
     }
 
     // Convertir otras propiedades si es necesario
-
+    if (createProductDto.low_stock !== undefined && typeof createProductDto.low_stock === 'string') {
+      createProductDto.low_stock = parseFloat(createProductDto.low_stock);
+    }
     return await this.prisma.product.create({
       data: createProductDto,
     });
@@ -124,6 +126,10 @@ export class ProductsService {
 
     if (updateProductDto.price && typeof updateProductDto.price === 'string') {
       updateProductDto.price = parseFloat(updateProductDto.price);
+    }
+
+    if (updateProductDto.low_stock !== undefined && typeof updateProductDto.low_stock === 'string') {
+      updateProductDto.low_stock = parseFloat(updateProductDto.low_stock);
     }
 
     // Evitar sobreescribir con null str
