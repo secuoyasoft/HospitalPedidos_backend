@@ -41,6 +41,11 @@ const conversionRates: Record<string, { base: string; rate: number }> = {
   '@': { base: 'weight', rate: 11500 }, // 1 arroba = ~11.5 kg
   arroba: { base: 'weight', rate: 11500 },
   arrobas: { base: 'weight', rate: 11500 },
+  qq: { base: 'weight', rate: 46000 }, // 1 quintal = 46 kg aprox en Bolivia
+  quintal: { base: 'weight', rate: 46000 },
+  quintales: { base: 'weight', rate: 46000 },
+  'bolsa de 10 kilos': { base: 'weight', rate: 10000 },
+  'bolsas de 10 kilos': { base: 'weight', rate: 10000 },
 
   // VOLUMEN (base: mililitros)
   ml: { base: 'volume', rate: 1 },
@@ -50,6 +55,9 @@ const conversionRates: Record<string, { base: string; rate: number }> = {
   litro: { base: 'volume', rate: 1000 },
   litros: { base: 'volume', rate: 1000 },
   cc: { base: 'volume', rate: 1 }, // centímetro cúbico
+  'c.c': { base: 'volume', rate: 1 },
+  'centimetro cubico': { base: 'volume', rate: 1 },
+  'centimetros cubicos': { base: 'volume', rate: 1 },
   gal: { base: 'volume', rate: 3785.41 },
   galon: { base: 'volume', rate: 3785.41 },
   galones: { base: 'volume', rate: 3785.41 },
@@ -68,6 +76,31 @@ const conversionRates: Record<string, { base: string; rate: number }> = {
   paquetes: { base: 'unit', rate: 1 },
   frasco: { base: 'unit', rate: 1 },
   frascos: { base: 'unit', rate: 1 },
+  carga: { base: 'unit', rate: 1 },
+  cargas: { base: 'unit', rate: 1 },
+  amarro: { base: 'unit', rate: 1 },
+  amarros: { base: 'unit', rate: 1 },
+  tubo: { base: 'unit', rate: 1 },
+  tubos: { base: 'unit', rate: 1 },
+  lata: { base: 'unit', rate: 1 },
+  latas: { base: 'unit', rate: 1 },
+  bolsa: { base: 'unit', rate: 1 },
+  bolsas: { base: 'unit', rate: 1 },
+  cabeza: { base: 'unit', rate: 1 },
+  cabezas: { base: 'unit', rate: 1 },
+  bloque: { base: 'unit', rate: 1 },
+  bloques: { base: 'unit', rate: 1 },
+  java: { base: 'unit', rate: 1 },
+  javas: { base: 'unit', rate: 1 },
+  jaba: { base: 'unit', rate: 1 },
+  jabas: { base: 'unit', rate: 1 },
+  maple: { base: 'unit', rate: 1 },
+  maples: { base: 'unit', rate: 1 },
+
+  // MONEDA (base: moneda)
+  bs: { base: 'currency', rate: 1 },
+  boliviano: { base: 'currency', rate: 1 },
+  bolivianos: { base: 'currency', rate: 1 },
 };
 
 /**
